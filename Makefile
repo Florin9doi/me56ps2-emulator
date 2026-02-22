@@ -28,4 +28,4 @@ nanopi-neo2:
 
 .PHONY: clean
 clean:
-	$(RM) $(PROGRAM) $(OBJS)
+	$(RM) $(TARGET) $(OBJS)
