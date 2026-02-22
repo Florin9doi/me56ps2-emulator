@@ -14,8 +14,8 @@ class ring_buffer
         std::condition_variable cv;
         bool is_empty_without_lock(void);
         bool is_full_without_lock(void);
-        bool enqueue_signle_without_lock(const T *data);
-        bool dequeue_signle_without_lock(T *data);
+        bool enqueue_single_without_lock(const T *data);
+        bool dequeue_single_without_lock(T *data);
     public:
         ring_buffer(const size_t size);
         ~ring_buffer();
@@ -78,7 +78,7 @@ size_t ring_buffer<T>::get_count(void)
 }
 
 template <typename T>
-bool ring_buffer<T>::enqueue_signle_without_lock(const T *data)
+bool ring_buffer<T>::enqueue_single_without_lock(const T *data)
 {
     if (is_full_without_lock()) {
         return false;
@@ -96,13 +96,13 @@ size_t ring_buffer<T>::enqueue(const T *data, size_t length)
     std::lock_guard<std::mutex> lock(mtx);
 
     size_t ptr = 0;
-    while(ptr < length && enqueue_signle_without_lock(&data[ptr])) {ptr++;}
+    while(ptr < length && enqueue_single_without_lock(&data[ptr])) {ptr++;}
 
     return ptr;
 }
 
 template <typename T>
-bool ring_buffer<T>::dequeue_signle_without_lock(T *data)
+bool ring_buffer<T>::dequeue_single_without_lock(T *data)
 {
     if (is_empty_without_lock()) {
         return false;
@@ -120,7 +120,7 @@ size_t ring_buffer<T>::dequeue(T *data, size_t max_length)
     std::lock_guard<std::mutex> lock(mtx);
 
     size_t ptr = 0;
-    while(ptr < max_length && dequeue_signle_without_lock(&data[ptr])) {ptr++;}
+    while(ptr < max_length && dequeue_single_without_lock(&data[ptr])) {ptr++;}
 
     return ptr;
 }
