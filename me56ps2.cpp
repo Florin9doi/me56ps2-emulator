@@ -11,6 +11,7 @@
 #include "usb_raw_control_event.h"
 #include "ring_buffer.h"
 #include "tcp_sock.h"
+#include "pty_dev.h"
 
 #include "me56ps2.h"
 
@@ -19,6 +20,7 @@ std::thread *thread_bulk_out = nullptr;
 
 ring_buffer<char> usb_tx_buffer(524288);
 tcp_sock *sock;
+pty_dev *pty;
 
 int debug_level = 0;
 
@@ -161,15 +163,29 @@ void *usb_bulk_out_thread(usb_raw_gadget *usb, int ep_num) {
             }
             if (strncmp(line.c_str(), "ATD", 3) == 0) {
                 // Dial. Ignore after "ATD"
-                struct sockaddr_in addr;
-                if (parse_address(line.substr(4), &addr)) {
-                    sock->set_addr(&addr);
-                }
-                if (sock->connect()) {
-                    reply = "CONNECT 57600 V42\r\n";
-                    enter_online = true;
+                if (line.substr(3) == "100" || line.substr(3) == "T100" || line.substr(3) == "P100") {
+                    // ATD100 / ATDT100 / ATDP100: use PTY
+                    if (pty->connect()) {
+                        reply = "CONNECT 57600 V42\r\n";
+                        enter_online = true;
+                    } else {
+                        reply = "BUSY\r\n";
+                    }
                 } else {
-                    reply = "BUSY\r\n";
+                    if (sock == nullptr) {
+                        reply = "BUSY\r\n";
+                    } else {
+                        struct sockaddr_in addr;
+                        if (parse_address(line.substr(4), &addr)) {
+                            sock->set_addr(&addr);
+                        }
+                        if (sock->connect()) {
+                            reply = "CONNECT 57600 V42\r\n";
+                            enter_online = true;
+                        } else {
+                            reply = "BUSY\r\n";
+                        }
+                    }
                 }
             }
 
@@ -184,7 +200,11 @@ void *usb_bulk_out_thread(usb_raw_gadget *usb, int ep_num) {
 
         // On-line mode loop
         while (connected.load() && buffer.length() > 0) {
-            sock->send(buffer.c_str(), buffer.length());
+            if (pty->is_connected()) {
+                pty->send(buffer.c_str(), buffer.length());
+            } else if (sock != nullptr) {
+                sock->send(buffer.c_str(), buffer.length());
+            }
             buffer.clear();
         }
     }
@@ -248,6 +268,10 @@ bool process_control_packet(usb_raw_gadget *usb, usb_raw_control_event *e, struc
                 sock->disconnect();
                 printf("disconnected.\n");
             }
+            if (pty != nullptr && pty->is_connected()) {
+                pty->disconnect();
+                printf("disconnected.\n");
+            }
         } else if ((e->ctrl.wValue & 0x0101) == 0x0101) {
             // set DTR to HIGH for off-hook
             if (debug_level >= 2) {printf("off-hook\n");};
@@ -307,7 +331,7 @@ bool event_usb_control_loop(usb_raw_gadget *usb)
 
 void show_usage(char *prog_name, bool verbose)
 {
-    printf("Usage: %s [-svh] ip_addr port [usb_driver] [usb_device]\n", prog_name);
+    printf("Usage: %s [-svh] [ip_addr port] [usb_driver] [usb_device]\n", prog_name);
     if (!verbose) {return;}
 
     printf("\n");
@@ -317,10 +341,12 @@ void show_usage(char *prog_name, bool verbose)
     printf("  -h    show this help message.\n");
     printf("\n");
     printf("Parameters:\n");
-    printf("  ip_addr       server IPv4 address\n");
-    printf("  port          port number\n");
+    printf("  ip_addr       server IPv4 address (required for socket mode)\n");
+    printf("  port          port number (required for socket mode)\n");
     printf("  usb_driver    driver name (default: %s)\n", USB_RAW_GADGET_DRIVER_DEFAULT);
     printf("  usb_device    device name (default: %s)\n", USB_RAW_GADGET_DEVICE_DEFAULT);
+    printf("\n");
+    printf("PTY mode: dial ATD100 from the modem to open a PTY slave device.\n");
     return;
 }
 
@@ -350,25 +376,33 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (optind < argc) {ip_addr = argv[optind++];}
-    if (optind < argc) {port = atoi(argv[optind++]);}
+    // Check if next two args look like ip_addr and port (socket mode)
+    if (optind + 1 < argc) {
+        const char *next_arg = argv[optind];
+        struct sockaddr_in probe_addr;
+        if (parse_address(next_arg, &probe_addr) || inet_addr(next_arg) != INADDR_NONE) {
+            ip_addr = argv[optind++];
+            port = atoi(argv[optind++]);
+        }
+    }
     if (optind < argc) {driver = argv[optind++];}
     if (optind < argc) {device = argv[optind++];}
-
-    if (ip_addr == nullptr || port == -1) {
-        show_usage(argv[0], false);
-        exit(1);
-    }
 
     usb_raw_gadget *usb = new usb_raw_gadget("/dev/raw-gadget");
     usb->set_debug_level(debug_level);
     usb->init(USB_SPEED_HIGH, driver, device);
     usb->run();
 
-    sock = new tcp_sock(is_server, ip_addr, port);
-    sock->set_debug_level(debug_level);
-    sock->set_ring_callback(ring_callback);
-    sock->set_recv_callback(recv_callback);
+    pty = new pty_dev();
+    pty->set_debug_level(debug_level);
+    pty->set_recv_callback(recv_callback);
+
+    if (ip_addr != nullptr && port != -1) {
+        sock = new tcp_sock(is_server, ip_addr, port);
+        sock->set_debug_level(debug_level);
+        sock->set_ring_callback(ring_callback);
+        sock->set_recv_callback(recv_callback);
+    }
 
     while(event_usb_control_loop(usb));
 

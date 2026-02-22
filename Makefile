@@ -1,5 +1,5 @@
 TARGET = me56ps2
-OBJS = me56ps2.o usb_raw_gadget.o usb_raw_control_event.o tcp_sock.o
+OBJS = me56ps2.o usb_raw_gadget.o usb_raw_control_event.o tcp_sock.o pty_dev.o
 CXXFLAGS = -Wall -Wextra
 LDFLAGS = -pthread
 
