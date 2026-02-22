@@ -5,7 +5,10 @@
 class usb_raw_control_event
 {
     public:
-        struct usb_raw_event event;
+        struct {
+            uint32_t type;
+            uint32_t length;
+        } event;
         struct usb_ctrlrequest ctrl;
         bool is_event(__u8 request_type);
         bool is_event(__u8 request_type, __u8 request);

@@ -274,7 +274,7 @@ bool event_usb_control_loop(usb_raw_gadget *usb)
     pkt.header.flags = 0;
     pkt.header.length = 0;
 
-    usb->event_fetch(&e.event);
+    usb->event_fetch(reinterpret_cast<struct usb_raw_event *>(&e.event));
     if (debug_level >= 1) {e.print_debug_log();}
 
     switch(e.event.type) {

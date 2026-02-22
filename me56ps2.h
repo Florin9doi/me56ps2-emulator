@@ -28,12 +28,20 @@ constexpr auto STRING_ID_PRODUCT = 2U;
 constexpr auto STRING_ID_SERIAL = 3U;
 
 struct usb_packet_control {
-    struct usb_raw_ep_io header;
+    struct {
+        uint16_t ep;
+        uint16_t flags;
+        uint32_t length;
+    } header;
     char data[MAX_PACKET_SIZE_CONTROL];
 };
 
 struct usb_packet_bulk {
-    struct usb_raw_ep_io header;
+    struct {
+        uint16_t ep;
+        uint16_t flags;
+        uint32_t length;
+    } header;
     char data[MAX_PACKET_SIZE_BULK];
 };
 
