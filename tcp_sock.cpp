@@ -108,11 +108,13 @@ tcp_sock::tcp_sock(bool is_server,  const char *ip_addr, uint16_t port)
 
 tcp_sock::~tcp_sock()
 {
-    if (server_fd != 0) {
+    if (server_fd >= 0) {
         close(server_fd);
     }
     if (listen_thread_ptr != nullptr) {
         listen_thread_ptr->join();
+        delete listen_thread_ptr;
+        listen_thread_ptr = nullptr;
     }
     disconnect();
 }
@@ -153,6 +155,7 @@ bool tcp_sock::connect()
     ret = ::connect(comm_fd, reinterpret_cast<struct sockaddr *>(&addr), sizeof(addr));
     if (ret < 0) {
         printf("tcp_sock: connect(): %s\n", std::strerror(errno));
+        ::close(comm_fd);
         return false;
     }
     
@@ -172,6 +175,7 @@ void tcp_sock::disconnect()
         if (recv_thread_ptr->joinable()) {
             recv_thread_ptr->join();
         }
+        delete recv_thread_ptr;
         recv_thread_ptr = nullptr;
     }
 }

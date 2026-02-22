@@ -4,13 +4,13 @@
 
 class tcp_sock {
     private:
-        int server_fd;
+        int server_fd = -1;
         std::atomic<int> comm_fd; // communication socket fd
         bool is_server;
         int debug_level = 0;
         struct sockaddr_in addr;
-        std::thread *recv_thread_ptr;
-        std::thread *listen_thread_ptr;
+        std::thread *recv_thread_ptr = nullptr;
+        std::thread *listen_thread_ptr = nullptr;
         void (*ring_callback)(void);
         void (*recv_callback)(const char *, size_t);
         void* recv_thread(void);

@@ -40,7 +40,7 @@ ring_buffer<T>::ring_buffer(const size_t size)
 template <typename T>
 ring_buffer<T>::~ring_buffer()
 {
-    delete buffer;
+    delete[] buffer;
 }
 
 template <typename T>
