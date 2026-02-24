@@ -255,6 +255,11 @@ bool process_control_packet(usb_raw_gadget *usb, usb_raw_control_event *e, struc
 
         return true;
     }
+    if (e->is_event(USB_TYPE_VENDOR, 0x05)) {
+        pkt->data[0] = 0x31;
+        pkt->header.length = 1;
+        return true;
+    }
     if (e->is_event(USB_TYPE_VENDOR)) {
         pkt->header.length = 0;
         return true;
