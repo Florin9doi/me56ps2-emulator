@@ -44,6 +44,30 @@ $ sudo ./me56ps2 203.0.113.1 10023
 
 In the game software, operate as the connecting side (or "SEND SIDE") when running as a client.
 
+#### PTY mode
+When no IP address and port are given, the emulator starts in PTY-only mode.
+Dialing `ATD100` from the game software opens a PTY slave device (e.g. `/dev/pts/1`)
+whose path is printed to the console. Any program (such as `minicom` or `socat`) can
+then connect to that slave device to exchange data with the emulator.
+
+```shell
+$ sudo ./me56ps2
+```
+
+After the game dials `ATD100`, the slave device path is printed:
+
+```
+pty_dev: PTY slave device: /dev/pts/1
+```
+
+PTY mode can also be combined with socket mode by supplying ip_addr and port as usual:
+
+```shell
+$ sudo ./me56ps2 203.0.113.1 10023
+```
+
+In that case, `ATD100` uses PTY while any other `ATD` address uses the TCP socket.
+
 ## Notes
 - "PlayStation" and "PS2" are registered trademarks of Sony Interactive Entertainment Inc.
 - This software is NOT created by Sony Interactive Entertainment Inc. or OMRON SOCIAL SOLUTIONS CO., LTD., and has nothing to do with them. Please do not make inquiries about this software to each company.
