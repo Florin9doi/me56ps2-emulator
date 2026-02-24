@@ -12,7 +12,7 @@
 #include "ring_buffer.h"
 #include "tcp_sock.h"
 #include "pty_dev.h"
-
+#include "isp.h"
 #include "me56ps2.h"
 
 std::thread *thread_bulk_in = nullptr;
@@ -168,6 +168,7 @@ void *usb_bulk_out_thread(usb_raw_gadget *usb, int ep_num) {
                     if (pty->connect()) {
                         reply = "CONNECT 57600 V42\r\n";
                         enter_online = true;
+                        ISP::setupISP(pty->get_slave_name());
                     } else {
                         reply = "BUSY\r\n";
                     }
