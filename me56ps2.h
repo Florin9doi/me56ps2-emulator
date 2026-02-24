@@ -132,16 +132,16 @@ const struct _usb_string_descriptor<1> me56ps2_string_descriptor_0 = {
 };
 
 // FIXME: specify byte order
-const struct _usb_string_descriptor<3> me56ps2_string_descriptor_1 = { // Manufacturer
+const struct _usb_string_descriptor<5> me56ps2_string_descriptor_1 = { // Manufacturer
     .bLength = sizeof(me56ps2_string_descriptor_1),
     .bDescriptorType = USB_DT_STRING,
-    .wData = {u'N', u'/', u'A'},
+    .wData = {u'O', u'M', u'R', u'O', u'N'},
 };
 
-const struct _usb_string_descriptor<14> me56ps2_string_descriptor_2 = { // Product
+const struct _usb_string_descriptor<7> me56ps2_string_descriptor_2 = { // Product
     .bLength = sizeof(me56ps2_string_descriptor_2),
     .bDescriptorType = USB_DT_STRING,
-    .wData = {u'M', u'o', u'd', u'e', u'm', u' ', u'e', u'm', u'u', u'l', u'a', u't', u'o', u'r'},
+    .wData = {u'M', u'E', u'5', u'6', u'P', u'S', u'2'},
 };
 
 const struct _usb_string_descriptor<3> me56ps2_string_descriptor_3 = { // Serial
