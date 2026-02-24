@@ -3,10 +3,12 @@
 
 #include <atomic>
 #include <thread>
+#include <string>
 
 class pty_dev {
     private:
         std::atomic<int> master_fd;
+        std::string slave_name;
         int debug_level = 0;
         std::thread *recv_thread_ptr = nullptr;
         void (*recv_callback)(const char *, size_t) = nullptr;
@@ -20,6 +22,7 @@ class pty_dev {
         bool connect();
         void disconnect();
         void send(const char *buffer, size_t length);
+        std::string get_slave_name();
 };
 
 #endif // PTY_DEV_H

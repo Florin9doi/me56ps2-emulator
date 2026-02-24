@@ -124,6 +124,7 @@ bool pty_dev::connect()
     printf("pty_dev: PTY slave device: %s\n", slave_name);
 
     master_fd.store(fd);
+    this->slave_name = slave_name;
     recv_thread_ptr = new std::thread([this]{pty_dev::recv_thread();});
     return true;
 }
@@ -161,3 +162,7 @@ void pty_dev::send(const char *buffer, size_t length)
         ptr += ret;
     }
 }
+
+std::string pty_dev::get_slave_name() {
+    return slave_name;
+};
