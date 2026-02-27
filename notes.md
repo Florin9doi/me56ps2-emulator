@@ -1,6 +1,6 @@
 - Raspberry PI Zero 2W
 ```shell
-sudo apt install iptables-persistent
+sudo apt install git iptables-persistent
 
 # compile raw-gadget
 git clone https://github.com/xairy/raw-gadget.git ~/raw-gadget
