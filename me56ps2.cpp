@@ -80,6 +80,13 @@ static const struct _usb_string_descriptor<3> p2gate_str_serial = {
     .wData = {u'N', u'/', u'A'},
 };
 
+static bool me56ps2_set_configuration(usb_raw_gadget *usb, struct usb_packet_control *pkt, const struct modem_config *cfg);
+static bool ms56kps2_set_configuration(usb_raw_gadget *usb, struct usb_packet_control *pkt, const struct modem_config *cfg);
+static bool p2gate_set_configuration(usb_raw_gadget *usb, struct usb_packet_control *pkt, const struct modem_config *cfg);
+static bool me56ps2_vendor_request(usb_raw_gadget *usb, usb_raw_control_event *e, struct usb_packet_control *pkt);
+static bool ms56kps2_vendor_request(usb_raw_gadget *usb, usb_raw_control_event *e, struct usb_packet_control *pkt);
+static bool p2gate_vendor_request(usb_raw_gadget *usb, usb_raw_control_event *e, struct usb_packet_control *pkt);
+
 static const struct modem_config modem_configs[] = {
     {
         .model_name = "me56ps2",
@@ -146,6 +153,8 @@ static const struct modem_config modem_configs[] = {
             &me56ps2_str_product,
             &me56ps2_str_serial,
         },
+        .handle_set_configuration = me56ps2_set_configuration,
+        .handle_vendor_request = me56ps2_vendor_request,
     },
     {
         .model_name = "p2gate",
@@ -260,6 +269,8 @@ static const struct modem_config modem_configs[] = {
             &p2gate_str_product,
             &p2gate_str_serial,
         },
+        .handle_set_configuration = p2gate_set_configuration,
+        .handle_vendor_request = p2gate_vendor_request,
     },
     {
         .model_name = "ms56kps2",
@@ -334,6 +345,8 @@ static const struct modem_config modem_configs[] = {
             &ms56kps2_str_product,
             &ms56kps2_str_serial,
         },
+        .handle_set_configuration = ms56kps2_set_configuration,
+        .handle_vendor_request = ms56kps2_vendor_request,
     }
 };
 
@@ -536,53 +549,44 @@ void *usb_bulk_out_thread(usb_raw_gadget *usb, int ep_num) {
     return NULL;
 }
 
-bool process_control_packet(usb_raw_gadget *usb, usb_raw_control_event *e, struct usb_packet_control *pkt)
+static bool default_set_configuration(usb_raw_gadget *usb, struct usb_packet_control *pkt, const struct modem_config *cfg)
 {
-    if (e->is_event(USB_TYPE_STANDARD, USB_REQ_GET_DESCRIPTOR)) {
-        const auto descriptor_type = e->get_descriptor_type();
-        if (descriptor_type == USB_DT_DEVICE) {
-            memcpy(pkt->data, &current_config->device_descriptor, sizeof(current_config->device_descriptor));
-            pkt->header.length = sizeof(current_config->device_descriptor);
-            return true;
-        }
-        if (descriptor_type == USB_DT_CONFIG) {
-            const auto total_length = __le16_to_cpu(current_config->config_descriptors.config.wTotalLength);
-            memcpy(pkt->data, &current_config->config_descriptors, total_length);
-            pkt->header.length = total_length;
-            return true;
-        }
-        if (descriptor_type == USB_DT_STRING) {
-            const auto id = e->ctrl.wValue & 0x00ff;
-            if (id >= STRING_DESCRIPTORS_NUM) {return false;}
-            const auto len = reinterpret_cast<const struct _usb_string_descriptor<1> *>(current_config->string_descriptors[id])->bLength;
-            memcpy(pkt->data, current_config->string_descriptors[id], len);
-            pkt->header.length = len;
-            return true;
-        }
+    if (thread_bulk_in == nullptr) {
+        const int ep_num_bulk_in = usb->ep_enable(
+            reinterpret_cast<struct usb_endpoint_descriptor *>(
+                const_cast<struct _usb_endpoint_descriptor *>(&cfg->config_descriptors.endpoints[1])));
+        thread_bulk_in = new std::thread(usb_bulk_in_thread, usb, ep_num_bulk_in);
     }
-    if (e->is_event(USB_TYPE_STANDARD, USB_REQ_SET_CONFIGURATION)) {
-        if (thread_bulk_in == nullptr) {
-            const int ep_num_bulk_in = usb->ep_enable(
-                reinterpret_cast<struct usb_endpoint_descriptor *>(
-                    const_cast<struct _usb_endpoint_descriptor *>(&current_config->config_descriptors.endpoints[1])));
-            thread_bulk_in = new std::thread(usb_bulk_in_thread, usb, ep_num_bulk_in);
-        }
-        if (thread_bulk_out == nullptr) {
-            const int ep_num_bulk_out = usb->ep_enable(
-                reinterpret_cast<struct usb_endpoint_descriptor *>(
-                    const_cast<struct _usb_endpoint_descriptor *>(&current_config->config_descriptors.endpoints[0])));
-            thread_bulk_out = new std::thread(usb_bulk_out_thread, usb, ep_num_bulk_out);
-        }
-        usb->vbus_draw(current_config->config_descriptors.config.bMaxPower);
-        usb->configure();
-        printf("USB configurated.\n");
-        pkt->header.length = 0;
-        return true;
+    if (thread_bulk_out == nullptr) {
+        const int ep_num_bulk_out = usb->ep_enable(
+            reinterpret_cast<struct usb_endpoint_descriptor *>(
+                const_cast<struct _usb_endpoint_descriptor *>(&cfg->config_descriptors.endpoints[0])));
+        thread_bulk_out = new std::thread(usb_bulk_out_thread, usb, ep_num_bulk_out);
     }
-    if (e->is_event(USB_TYPE_STANDARD, USB_REQ_SET_INTERFACE)) {
-        pkt->header.length = 0;
-        return true;
-    }
+    usb->vbus_draw(cfg->config_descriptors.config.bMaxPower);
+    usb->configure();
+    printf("USB configured.\n");
+    pkt->header.length = 0;
+    return true;
+}
+
+static bool me56ps2_set_configuration(usb_raw_gadget *usb, struct usb_packet_control *pkt, const struct modem_config *cfg)
+{
+    return default_set_configuration(usb, pkt, cfg);
+}
+
+static bool ms56kps2_set_configuration(usb_raw_gadget *usb, struct usb_packet_control *pkt, const struct modem_config *cfg)
+{
+    return default_set_configuration(usb, pkt, cfg);
+}
+
+static bool p2gate_set_configuration(usb_raw_gadget *usb, struct usb_packet_control *pkt, const struct modem_config *cfg)
+{
+    return default_set_configuration(usb, pkt, cfg);
+}
+
+static bool dtr_vendor_request(usb_raw_gadget *usb __attribute__((unused)), usb_raw_control_event *e, struct usb_packet_control *pkt)
+{
     if (e->is_event(USB_TYPE_VENDOR, 0x01)) {
         pkt->header.length = 0;
 
@@ -615,8 +619,60 @@ bool process_control_packet(usb_raw_gadget *usb, usb_raw_control_event *e, struc
         pkt->header.length = 0;
         return true;
     }
-
     return false;
+}
+
+static bool me56ps2_vendor_request(usb_raw_gadget *usb, usb_raw_control_event *e, struct usb_packet_control *pkt)
+{
+    return dtr_vendor_request(usb, e, pkt);
+}
+
+static bool ms56kps2_vendor_request(usb_raw_gadget *usb, usb_raw_control_event *e, struct usb_packet_control *pkt)
+{
+    return dtr_vendor_request(usb, e, pkt);
+}
+
+static bool p2gate_vendor_request(usb_raw_gadget *usb __attribute__((unused)), usb_raw_control_event *e, struct usb_packet_control *pkt)
+{
+    if (e->is_event(USB_TYPE_VENDOR)) {
+        pkt->header.length = 0;
+        return true;
+    }
+    return false;
+}
+
+bool process_control_packet(usb_raw_gadget *usb, usb_raw_control_event *e, struct usb_packet_control *pkt)
+{
+    if (e->is_event(USB_TYPE_STANDARD, USB_REQ_GET_DESCRIPTOR)) {
+        const auto descriptor_type = e->get_descriptor_type();
+        if (descriptor_type == USB_DT_DEVICE) {
+            memcpy(pkt->data, &current_config->device_descriptor, sizeof(current_config->device_descriptor));
+            pkt->header.length = sizeof(current_config->device_descriptor);
+            return true;
+        }
+        if (descriptor_type == USB_DT_CONFIG) {
+            const auto total_length = __le16_to_cpu(current_config->config_descriptors.config.wTotalLength);
+            memcpy(pkt->data, &current_config->config_descriptors, total_length);
+            pkt->header.length = total_length;
+            return true;
+        }
+        if (descriptor_type == USB_DT_STRING) {
+            const auto id = e->ctrl.wValue & 0x00ff;
+            if (id >= STRING_DESCRIPTORS_NUM) {return false;}
+            const auto len = reinterpret_cast<const struct _usb_string_descriptor<1> *>(current_config->string_descriptors[id])->bLength;
+            memcpy(pkt->data, current_config->string_descriptors[id], len);
+            pkt->header.length = len;
+            return true;
+        }
+    }
+    if (e->is_event(USB_TYPE_STANDARD, USB_REQ_SET_CONFIGURATION)) {
+        return current_config->handle_set_configuration(usb, pkt, current_config);
+    }
+    if (e->is_event(USB_TYPE_STANDARD, USB_REQ_SET_INTERFACE)) {
+        pkt->header.length = 0;
+        return true;
+    }
+    return current_config->handle_vendor_request(usb, e, pkt);
 }
 
 bool event_usb_control_loop(usb_raw_gadget *usb)
