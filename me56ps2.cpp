@@ -116,6 +116,10 @@ const struct modem_config modem_me56ps2 = {
         &me56ps2_str_product,
         &me56ps2_str_serial,
     },
+    .config_desc_ptr  = nullptr,
+    .config_desc_size = 0,
+    .ep_bulk_in_ptr   = nullptr,
+    .ep_bulk_out_ptr  = nullptr,
 };
 
 // ── Suntac OnlineStation MS56KPS2 ─────────────────────────────────────────────
@@ -199,23 +203,125 @@ const struct modem_config modem_ms56kps2 = {
         &ms56kps2_str_product,
         &ms56kps2_str_serial,
     },
+    .config_desc_ptr  = nullptr,
+    .config_desc_size = 0,
+    .ep_bulk_in_ptr   = nullptr,
+    .ep_bulk_out_ptr  = nullptr,
 };
 
 // ── Conexant SmartSCM P2Gate ──────────────────────────────────────────────────
-static const struct _usb_string_descriptor<8> p2gate_str_manufacturer = {
+static const struct _usb_string_descriptor<22> p2gate_str_manufacturer = {
     .bLength = sizeof(p2gate_str_manufacturer),
     .bDescriptorType = USB_DT_STRING,
-    .wData = {u'C', u'o', u'n', u'e', u'x', u'a', u'n', u't'},
+    .wData = {u'C', u'o', u'n', u'e', u'x', u'a', u'n', u't', u' ', u'S', u'y', u's', u't', u'e', u'm', u's', u',', u' ', u'I', u'n', u'c', u'.'},
 };
-static const struct _usb_string_descriptor<6> p2gate_str_product = {
+static const struct _usb_string_descriptor<30> p2gate_str_product = {
     .bLength = sizeof(p2gate_str_product),
     .bDescriptorType = USB_DT_STRING,
-    .wData = {u'P', u'2', u'G', u'a', u't', u'e'},
+    .wData = {u'V', u'.', u'9', u'0', u' ', u'M', u'o', u'd', u'e', u'm', u' ', u'w', u'i', u't', u'h', u' ', u'U', u'S', u'B', u' ', u'(', u'G', u'a', u'm', u'e', u' ', u'A', u'p', u'p', u')'},
 };
-static const struct _usb_string_descriptor<3> p2gate_str_serial = {
+static const struct _usb_string_descriptor<14> p2gate_str_serial = {
     .bLength = sizeof(p2gate_str_serial),
     .bDescriptorType = USB_DT_STRING,
-    .wData = {u'N', u'/', u'A'},
+    .wData = {u'S', u'C', u'M', u'U', u'S', u'B', u'2', u'0', u'0', u'0', u'0', u'9', u'7', u'3'},
+};
+static const struct _usb_string_descriptor<27> p2gate_str_config = {
+    .bLength = sizeof(p2gate_str_config),
+    .bDescriptorType = USB_DT_STRING,
+    .wData = {u'C', u'o', u'n', u'f', u'i', u'g', u'u', u'r', u'a', u't', u'i', u'o', u'n', u' ', u'f', u'o', u'r', u' ', u'H', u'C', u'F', u' ', u'm', u'o', u'd', u'e', u'm'},
+};
+static const struct _usb_string_descriptor<28> p2gate_str_interface = {
+    .bLength = sizeof(p2gate_str_interface),
+    .bDescriptorType = USB_DT_STRING,
+    .wData = {u'D', u'D', u'P', u'/', u'S', u'S', u'D', u' ', u'S', u'c', u'r', u'a', u't', u'c', u'h', u'p', u'a', u'd', u' ', u'i', u'n', u't', u'e', u'r', u'f', u'a', u'c', u'e'},
+};
+
+static const struct usb_config_descriptors_p2gate p2gate_config_descriptors = {
+    .config = {
+        .bLength             = USB_DT_CONFIG_SIZE,
+        .bDescriptorType     = USB_DT_CONFIG,
+        .wTotalLength        = __cpu_to_le16(sizeof(struct usb_config_descriptors_p2gate)),
+        .bNumInterfaces      = 1,
+        .bConfigurationValue = 1,
+        .iConfiguration      = 4,
+        .bmAttributes        = 0xe0,  // Self Powered + Remote Wakeup
+        .bMaxPower           = 0x5a,  // 0x5a = 90; 90 * 2 mA = 180 mA
+    },
+    .interface = {
+        .bLength             = USB_DT_INTERFACE_SIZE,
+        .bDescriptorType     = USB_DT_INTERFACE,
+        .bInterfaceNumber    = 0,
+        .bAlternateSetting   = 0,
+        .bNumEndpoints       = 8,
+        .bInterfaceClass     = 0xff,
+        .bInterfaceSubClass  = 0xff,
+        .bInterfaceProtocol  = 0xff,
+        .iInterface          = 5,
+    },
+    .endpoint_ep1_out = {
+        .bLength             = USB_DT_ENDPOINT_SIZE,
+        .bDescriptorType     = USB_DT_ENDPOINT,
+        .bEndpointAddress    = USB_DIR_OUT | 1,
+        .bmAttributes        = USB_ENDPOINT_XFER_BULK,
+        .wMaxPacketSize      = MAX_PACKET_SIZE_BULK,
+        .bInterval           = 0,
+    },
+    .endpoint_ep1_in = {
+        .bLength             = USB_DT_ENDPOINT_SIZE,
+        .bDescriptorType     = USB_DT_ENDPOINT,
+        .bEndpointAddress    = USB_DIR_IN | 1,
+        .bmAttributes        = USB_ENDPOINT_XFER_BULK,
+        .wMaxPacketSize      = MAX_PACKET_SIZE_BULK,
+        .bInterval           = 0,
+    },
+    .endpoint_ep2_out = {
+        .bLength             = USB_DT_ENDPOINT_SIZE,
+        .bDescriptorType     = USB_DT_ENDPOINT,
+        .bEndpointAddress    = USB_DIR_OUT | 2,
+        .bmAttributes        = USB_ENDPOINT_XFER_BULK,
+        .wMaxPacketSize      = MAX_PACKET_SIZE_BULK,
+        .bInterval           = 0,
+    },
+    .endpoint_ep2_in = {
+        .bLength             = USB_DT_ENDPOINT_SIZE,
+        .bDescriptorType     = USB_DT_ENDPOINT,
+        .bEndpointAddress    = USB_DIR_IN | 2,
+        .bmAttributes        = USB_ENDPOINT_XFER_BULK,
+        .wMaxPacketSize      = MAX_PACKET_SIZE_BULK,
+        .bInterval           = 0,
+    },
+    .endpoint_ep3_out = {
+        .bLength             = USB_DT_ENDPOINT_SIZE,
+        .bDescriptorType     = USB_DT_ENDPOINT,
+        .bEndpointAddress    = USB_DIR_OUT | 3,
+        .bmAttributes        = USB_ENDPOINT_XFER_BULK,
+        .wMaxPacketSize      = MAX_PACKET_SIZE_BULK,
+        .bInterval           = 0,
+    },
+    .endpoint_ep3_in = {
+        .bLength             = USB_DT_ENDPOINT_SIZE,
+        .bDescriptorType     = USB_DT_ENDPOINT,
+        .bEndpointAddress    = USB_DIR_IN | 3,
+        .bmAttributes        = USB_ENDPOINT_XFER_BULK,
+        .wMaxPacketSize      = MAX_PACKET_SIZE_BULK,
+        .bInterval           = 0,
+    },
+    .endpoint_ep4_out = {
+        .bLength             = USB_DT_ENDPOINT_SIZE,
+        .bDescriptorType     = USB_DT_ENDPOINT,
+        .bEndpointAddress    = USB_DIR_OUT | 4,
+        .bmAttributes        = USB_ENDPOINT_XFER_BULK,
+        .wMaxPacketSize      = MAX_PACKET_SIZE_BULK,
+        .bInterval           = 0,
+    },
+    .endpoint_ep4_in = {
+        .bLength             = USB_DT_ENDPOINT_SIZE,
+        .bDescriptorType     = USB_DT_ENDPOINT,
+        .bEndpointAddress    = USB_DIR_IN | 4,
+        .bmAttributes        = USB_ENDPOINT_XFER_BULK,
+        .wMaxPacketSize      = MAX_PACKET_SIZE_BULK,
+        .bInterval           = 0,
+    },
 };
 
 const struct modem_config modem_p2gate = {
@@ -223,65 +329,33 @@ const struct modem_config modem_p2gate = {
     .device_descriptor = {
         .bLength            = USB_DT_DEVICE_SIZE,
         .bDescriptorType    = USB_DT_DEVICE,
-        .bcdUSB             = __constant_cpu_to_le16(BCD_USB),
-        .bDeviceClass       = 0,
-        .bDeviceSubClass    = 0,
-        .bDeviceProtocol    = 0,
+        .bcdUSB             = __constant_cpu_to_le16(0x0100U), // USB 1.0
+        .bDeviceClass       = 0xff,
+        .bDeviceSubClass    = 0xff,
+        .bDeviceProtocol    = 0xff,
         .bMaxPacketSize0    = MAX_PACKET_SIZE_CONTROL,
         .idVendor           = __constant_cpu_to_le16(0x0572U), // Conexant Systems
         .idProduct          = __constant_cpu_to_le16(0x1272U), // SmartSCM P2Gate
-        .bcdDevice          = __constant_cpu_to_le16(BCD_DEVICE),
+        .bcdDevice          = __constant_cpu_to_le16(0x0001U), // 0.01
         .iManufacturer      = STRING_ID_MANUFACTURER,
         .iProduct           = STRING_ID_PRODUCT,
         .iSerialNumber      = STRING_ID_SERIAL,
         .bNumConfigurations = 1,
     },
-    .config_descriptors = {
-        .config = {
-            .bLength             = USB_DT_CONFIG_SIZE,
-            .bDescriptorType     = USB_DT_CONFIG,
-            .wTotalLength        = __cpu_to_le16(sizeof(struct usb_config_descriptors)),
-            .bNumInterfaces      = 1,
-            .bConfigurationValue = 1,
-            .iConfiguration      = 2,
-            .bmAttributes        = USB_CONFIG_ATT_WAKEUP,
-            .bMaxPower           = 0x1e,
-        },
-        .interface = {
-            .bLength             = USB_DT_INTERFACE_SIZE,
-            .bDescriptorType     = USB_DT_INTERFACE,
-            .bInterfaceNumber    = 0,
-            .bAlternateSetting   = 0,
-            .bNumEndpoints       = 2,
-            .bInterfaceClass     = 0xff,
-            .bInterfaceSubClass  = 0xff,
-            .bInterfaceProtocol  = 0xff,
-            .iInterface          = 2,
-        },
-        .endpoint_bulk_in = {
-            .bLength             = USB_DT_ENDPOINT_SIZE,
-            .bDescriptorType     = USB_DT_ENDPOINT,
-            .bEndpointAddress    = USB_DIR_IN | ENDPOINT_ADDR_BULK,
-            .bmAttributes        = USB_ENDPOINT_XFER_BULK,
-            .wMaxPacketSize      = MAX_PACKET_SIZE_BULK,
-            .bInterval           = 0,
-        },
-        .endpoint_bulk_out = {
-            .bLength             = USB_DT_ENDPOINT_SIZE,
-            .bDescriptorType     = USB_DT_ENDPOINT,
-            .bEndpointAddress    = USB_DIR_OUT | ENDPOINT_ADDR_BULK,
-            .bmAttributes        = USB_ENDPOINT_XFER_BULK,
-            .wMaxPacketSize      = MAX_PACKET_SIZE_BULK,
-            .bInterval           = 0,
-        },
-    },
-    .string_descriptors_num = STRING_DESCRIPTORS_NUM,
+    .config_descriptors = {},
+    .string_descriptors_num = 6,
     .string_descriptors = {
         &str_lang,
         &p2gate_str_manufacturer,
         &p2gate_str_product,
         &p2gate_str_serial,
+        &p2gate_str_config,
+        &p2gate_str_interface,
     },
+    .config_desc_ptr  = &p2gate_config_descriptors,
+    .config_desc_size = sizeof(p2gate_config_descriptors),
+    .ep_bulk_in_ptr   = &p2gate_config_descriptors.endpoint_ep1_in,
+    .ep_bulk_out_ptr  = &p2gate_config_descriptors.endpoint_ep1_out,
 };
 
 // ── Model registry ────────────────────────────────────────────────────────────
@@ -500,8 +574,13 @@ bool process_control_packet(usb_raw_gadget *usb, usb_raw_control_event *e, struc
             return true;
         }
         if (descriptor_type == USB_DT_CONFIG) {
-            memcpy(pkt->data, &current_config->config_descriptors, sizeof(current_config->config_descriptors));
-            pkt->header.length = sizeof(current_config->config_descriptors);
+            if (current_config->config_desc_ptr) {
+                memcpy(pkt->data, current_config->config_desc_ptr, current_config->config_desc_size);
+                pkt->header.length = current_config->config_desc_size;
+            } else {
+                memcpy(pkt->data, &current_config->config_descriptors, sizeof(current_config->config_descriptors));
+                pkt->header.length = sizeof(current_config->config_descriptors);
+            }
             return true;
         }
         if (descriptor_type == USB_DT_STRING) {
@@ -514,19 +593,28 @@ bool process_control_packet(usb_raw_gadget *usb, usb_raw_control_event *e, struc
         }
     }
     if (e->is_event(USB_TYPE_STANDARD, USB_REQ_SET_CONFIGURATION)) {
+        const auto *ep_in  = current_config->ep_bulk_in_ptr
+            ? current_config->ep_bulk_in_ptr
+            : &current_config->config_descriptors.endpoint_bulk_in;
+        const auto *ep_out = current_config->ep_bulk_out_ptr
+            ? current_config->ep_bulk_out_ptr
+            : &current_config->config_descriptors.endpoint_bulk_out;
+        const uint8_t max_power = current_config->config_desc_ptr
+            ? reinterpret_cast<const struct usb_config_descriptor *>(current_config->config_desc_ptr)->bMaxPower
+            : current_config->config_descriptors.config.bMaxPower;
         if (thread_bulk_in == nullptr) {
             const int ep_num_bulk_in = usb->ep_enable(
                 reinterpret_cast<struct usb_endpoint_descriptor *>(
-                    const_cast<struct _usb_endpoint_descriptor *>(&current_config->config_descriptors.endpoint_bulk_in)));
+                    const_cast<struct _usb_endpoint_descriptor *>(ep_in)));
             thread_bulk_in = new std::thread(usb_bulk_in_thread, usb, ep_num_bulk_in);
         }
         if (thread_bulk_out == nullptr) {
             const int ep_num_bulk_out = usb->ep_enable(
                 reinterpret_cast<struct usb_endpoint_descriptor *>(
-                    const_cast<struct _usb_endpoint_descriptor *>(&current_config->config_descriptors.endpoint_bulk_out)));
+                    const_cast<struct _usb_endpoint_descriptor *>(ep_out)));
             thread_bulk_out = new std::thread(usb_bulk_out_thread, usb, ep_num_bulk_out);
         }
-        usb->vbus_draw(current_config->config_descriptors.config.bMaxPower);
+        usb->vbus_draw(max_power);
         usb->configure();
         printf("USB configurated.\n");
         pkt->header.length = 0;

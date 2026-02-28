@@ -25,7 +25,9 @@ constexpr auto STRING_ID_MANUFACTURER = 1U;
 constexpr auto STRING_ID_PRODUCT = 2U;
 constexpr auto STRING_ID_SERIAL = 3U;
 
-constexpr auto STRING_DESCRIPTORS_NUM = 4;
+constexpr auto STRING_DESCRIPTORS_NUM = 6;
+
+constexpr auto CONTROL_DATA_BUFFER_SIZE = 256U;
 
 struct usb_packet_control {
     struct {
@@ -33,7 +35,7 @@ struct usb_packet_control {
         uint16_t flags;
         uint32_t length;
     } header;
-    char data[MAX_PACKET_SIZE_CONTROL];
+    char data[CONTROL_DATA_BUFFER_SIZE];
 };
 
 struct usb_packet_bulk {
@@ -68,12 +70,30 @@ struct usb_config_descriptors {
     struct _usb_endpoint_descriptor endpoint_bulk_out;
 };
 
+struct usb_config_descriptors_p2gate {
+    struct usb_config_descriptor config;
+    struct usb_interface_descriptor interface;
+    struct _usb_endpoint_descriptor endpoint_ep1_out;
+    struct _usb_endpoint_descriptor endpoint_ep1_in;
+    struct _usb_endpoint_descriptor endpoint_ep2_out;
+    struct _usb_endpoint_descriptor endpoint_ep2_in;
+    struct _usb_endpoint_descriptor endpoint_ep3_out;
+    struct _usb_endpoint_descriptor endpoint_ep3_in;
+    struct _usb_endpoint_descriptor endpoint_ep4_out;
+    struct _usb_endpoint_descriptor endpoint_ep4_in;
+};
+
 struct modem_config {
     const char *model_name;
     struct usb_device_descriptor device_descriptor;
     struct usb_config_descriptors config_descriptors;
     int string_descriptors_num;
     const void *string_descriptors[STRING_DESCRIPTORS_NUM];
+    // Optional override for modems with non-standard config descriptors
+    const void   *config_desc_ptr;   // non-null: use instead of config_descriptors
+    uint16_t      config_desc_size;
+    const struct _usb_endpoint_descriptor *ep_bulk_in_ptr;  // non-null: use for ep_enable
+    const struct _usb_endpoint_descriptor *ep_bulk_out_ptr;
 };
 
 extern const struct modem_config modem_me56ps2;   // Omron ME56PS2
