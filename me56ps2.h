@@ -66,21 +66,9 @@ struct _usb_string_descriptor {
 struct usb_config_descriptors {
     struct usb_config_descriptor config;
     struct usb_interface_descriptor interface;
-    struct _usb_endpoint_descriptor endpoint_bulk_in;
     struct _usb_endpoint_descriptor endpoint_bulk_out;
-};
-
-struct usb_config_descriptors_p2gate {
-    struct usb_config_descriptor config;
-    struct usb_interface_descriptor interface;
-    struct _usb_endpoint_descriptor endpoint_ep1_out;
-    struct _usb_endpoint_descriptor endpoint_ep1_in;
-    struct _usb_endpoint_descriptor endpoint_ep2_out;
-    struct _usb_endpoint_descriptor endpoint_ep2_in;
-    struct _usb_endpoint_descriptor endpoint_ep3_out;
-    struct _usb_endpoint_descriptor endpoint_ep3_in;
-    struct _usb_endpoint_descriptor endpoint_ep4_out;
-    struct _usb_endpoint_descriptor endpoint_ep4_in;
+    struct _usb_endpoint_descriptor endpoint_bulk_in;
+    struct _usb_endpoint_descriptor endpoint_extra[6];
 };
 
 struct modem_config {
@@ -89,11 +77,6 @@ struct modem_config {
     struct usb_config_descriptors config_descriptors;
     int string_descriptors_num;
     const void *string_descriptors[STRING_DESCRIPTORS_NUM];
-    // Optional override for modems with non-standard config descriptors
-    const void   *config_desc_ptr;   // non-null: use instead of config_descriptors
-    uint16_t      config_desc_size;
-    const struct _usb_endpoint_descriptor *ep_bulk_in_ptr;  // non-null: use for ep_enable
-    const struct _usb_endpoint_descriptor *ep_bulk_out_ptr;
 };
 
 extern const struct modem_config modem_me56ps2;   // Omron ME56PS2
