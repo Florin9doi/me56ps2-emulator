@@ -146,6 +146,8 @@ static const struct modem_config modem_configs[] = {
             &me56ps2_str_product,
             &me56ps2_str_serial,
         },
+        .handle_set_configuration = me56ps2_set_configuration,
+        .handle_vendor_request = me56ps2_vendor_request,
     },
     {
         .model_name = "p2gate",
@@ -173,7 +175,7 @@ static const struct modem_config modem_configs[] = {
                 .bNumInterfaces      = 1,
                 .bConfigurationValue = 1,
                 .iConfiguration      = 4,
-                .bmAttributes        = 0xe0,
+                .bmAttributes        = USB_CONFIG_ATT_ONE | USB_CONFIG_ATT_SELFPOWER | USB_CONFIG_ATT_WAKEUP,
                 .bMaxPower           = 0x5a,
             },
             .interface = {
@@ -260,6 +262,8 @@ static const struct modem_config modem_configs[] = {
             &p2gate_str_product,
             &p2gate_str_serial,
         },
+        .handle_set_configuration = p2gate_set_configuration,
+        .handle_vendor_request = p2gate_vendor_request,
     },
     {
         .model_name = "ms56kps2",
@@ -334,18 +338,10 @@ static const struct modem_config modem_configs[] = {
             &ms56kps2_str_product,
             &ms56kps2_str_serial,
         },
+        .handle_set_configuration = ms56kps2_set_configuration,
+        .handle_vendor_request = ms56kps2_vendor_request,
     }
 };
-
-const struct modem_config *find_modem_config(const char *name)
-{
-    for (const auto& cfg : modem_configs) {
-        if (strcmp(cfg.model_name, name) == 0) {
-            return &cfg;
-        }
-    }
-    return nullptr;
-}
 
 static const struct modem_config *current_config = &modem_configs[0];
 
@@ -536,6 +532,113 @@ void *usb_bulk_out_thread(usb_raw_gadget *usb, int ep_num) {
     return NULL;
 }
 
+static bool me56ps2_set_configuration(usb_raw_gadget *usb, struct usb_packet_control *pkt, const struct modem_config *cfg) {
+    if (thread_bulk_in == nullptr) {
+        const int ep_num_bulk_in = usb->ep_enable(
+            reinterpret_cast<struct usb_endpoint_descriptor *>(
+                const_cast<struct _usb_endpoint_descriptor *>(&cfg->config_descriptors.endpoints[1])));
+        thread_bulk_in = new std::thread(usb_bulk_in_thread, usb, ep_num_bulk_in);
+    }
+    if (thread_bulk_out == nullptr) {
+        const int ep_num_bulk_out = usb->ep_enable(
+            reinterpret_cast<struct usb_endpoint_descriptor *>(
+                const_cast<struct _usb_endpoint_descriptor *>(&cfg->config_descriptors.endpoints[0])));
+        thread_bulk_out = new std::thread(usb_bulk_out_thread, usb, ep_num_bulk_out);
+    }
+    usb->vbus_draw(cfg->config_descriptors.config.bMaxPower);
+    usb->configure();
+    printf("USB configured.\n");
+    pkt->header.length = 0;
+    return true;
+}
+static bool ms56kps2_set_configuration(usb_raw_gadget *usb, struct usb_packet_control *pkt, const struct modem_config *cfg) {
+    if (thread_bulk_in == nullptr) {
+        const int ep_num_bulk_in = usb->ep_enable(
+            reinterpret_cast<struct usb_endpoint_descriptor *>(
+                const_cast<struct _usb_endpoint_descriptor *>(&cfg->config_descriptors.endpoints[1])));
+        thread_bulk_in = new std::thread(usb_bulk_in_thread, usb, ep_num_bulk_in);
+    }
+    if (thread_bulk_out == nullptr) {
+        const int ep_num_bulk_out = usb->ep_enable(
+            reinterpret_cast<struct usb_endpoint_descriptor *>(
+                const_cast<struct _usb_endpoint_descriptor *>(&cfg->config_descriptors.endpoints[0])));
+        thread_bulk_out = new std::thread(usb_bulk_out_thread, usb, ep_num_bulk_out);
+    }
+    usb->vbus_draw(cfg->config_descriptors.config.bMaxPower);
+    usb->configure();
+    printf("USB configured.\n");
+    pkt->header.length = 0;
+    return true;
+}
+static bool p2gate_set_configuration(usb_raw_gadget *usb, struct usb_packet_control *pkt, const struct modem_config *cfg) {
+    if (thread_bulk_in == nullptr) {
+        const int ep_num_bulk_in = usb->ep_enable(
+            reinterpret_cast<struct usb_endpoint_descriptor *>(
+                const_cast<struct _usb_endpoint_descriptor *>(&cfg->config_descriptors.endpoints[1])));
+        thread_bulk_in = new std::thread(usb_bulk_in_thread, usb, ep_num_bulk_in);
+    }
+    if (thread_bulk_out == nullptr) {
+        const int ep_num_bulk_out = usb->ep_enable(
+            reinterpret_cast<struct usb_endpoint_descriptor *>(
+                const_cast<struct _usb_endpoint_descriptor *>(&cfg->config_descriptors.endpoints[0])));
+        thread_bulk_out = new std::thread(usb_bulk_out_thread, usb, ep_num_bulk_out);
+    }
+    usb->vbus_draw(cfg->config_descriptors.config.bMaxPower);
+    usb->configure();
+    printf("USB configured.\n");
+    pkt->header.length = 0;
+    return true;
+}
+
+static bool me56ps2_vendor_request(usb_raw_gadget *usb, usb_raw_control_event *e, struct usb_packet_control *pkt) {
+    if (e->is_event(USB_TYPE_VENDOR, 0x01)) {
+        pkt->header.length = 0;
+        if ((e->ctrl.wValue & 0x0101) == 0x0100) {
+            // set DTR to LOW for on-hook
+            if (debug_level >= 2) {printf("on-hook\n");};
+            // disconnect
+            connected.store(false);
+            if (sock != nullptr && sock->is_connected()) {
+                sock->disconnect();
+                printf("disconnected.\n");
+            }
+            if (pty != nullptr && pty->is_connected()) {
+                pty->disconnect();
+                printf("disconnected.\n");
+            }
+        } else if ((e->ctrl.wValue & 0x0101) == 0x0101) {
+            // set DTR to HIGH for off-hook
+            if (debug_level >= 2) {printf("off-hook\n");};
+        }
+        return true;
+    }
+    if (e->is_event(USB_TYPE_VENDOR, 0x05)) {
+        pkt->data[0] = 0x31;
+        pkt->header.length = 1;
+        return true;
+    }
+    if (e->is_event(USB_TYPE_VENDOR)) {
+        pkt->header.length = 0;
+        return true;
+    }
+}
+static bool ms56kps2_vendor_request(usb_raw_gadget *usb, usb_raw_control_event *e, struct usb_packet_control *pkt) {
+    return true;
+}
+static bool p2gate_vendor_request(usb_raw_gadget *usb, usb_raw_control_event *e, struct usb_packet_control *pkt) {
+    return true;
+}
+
+const struct modem_config *find_modem_config(const char *name)
+{
+    for (const auto& cfg : modem_configs) {
+        if (strcmp(cfg.model_name, name) == 0) {
+            return &cfg;
+        }
+    }
+    return nullptr;
+}
+
 bool process_control_packet(usb_raw_gadget *usb, usb_raw_control_event *e, struct usb_packet_control *pkt)
 {
     if (e->is_event(USB_TYPE_STANDARD, USB_REQ_GET_DESCRIPTOR)) {
@@ -561,59 +664,14 @@ bool process_control_packet(usb_raw_gadget *usb, usb_raw_control_event *e, struc
         }
     }
     if (e->is_event(USB_TYPE_STANDARD, USB_REQ_SET_CONFIGURATION)) {
-        if (thread_bulk_in == nullptr) {
-            const int ep_num_bulk_in = usb->ep_enable(
-                reinterpret_cast<struct usb_endpoint_descriptor *>(
-                    const_cast<struct _usb_endpoint_descriptor *>(&current_config->config_descriptors.endpoints[1])));
-            thread_bulk_in = new std::thread(usb_bulk_in_thread, usb, ep_num_bulk_in);
-        }
-        if (thread_bulk_out == nullptr) {
-            const int ep_num_bulk_out = usb->ep_enable(
-                reinterpret_cast<struct usb_endpoint_descriptor *>(
-                    const_cast<struct _usb_endpoint_descriptor *>(&current_config->config_descriptors.endpoints[0])));
-            thread_bulk_out = new std::thread(usb_bulk_out_thread, usb, ep_num_bulk_out);
-        }
-        usb->vbus_draw(current_config->config_descriptors.config.bMaxPower);
-        usb->configure();
-        printf("USB configurated.\n");
-        pkt->header.length = 0;
-        return true;
+        return current_config->handle_set_configuration(usb, pkt, current_config);
     }
     if (e->is_event(USB_TYPE_STANDARD, USB_REQ_SET_INTERFACE)) {
         pkt->header.length = 0;
         return true;
     }
-    if (e->is_event(USB_TYPE_VENDOR, 0x01)) {
-        pkt->header.length = 0;
-
-        if ((e->ctrl.wValue & 0x0101) == 0x0100) {
-            // set DTR to LOW for on-hook
-            if (debug_level >= 2) {printf("on-hook\n");};
-            // disconnect
-            connected.store(false);
-            if (sock != nullptr && sock->is_connected()) {
-                sock->disconnect();
-                printf("disconnected.\n");
-            }
-            if (pty != nullptr && pty->is_connected()) {
-                pty->disconnect();
-                printf("disconnected.\n");
-            }
-        } else if ((e->ctrl.wValue & 0x0101) == 0x0101) {
-            // set DTR to HIGH for off-hook
-            if (debug_level >= 2) {printf("off-hook\n");};
-        }
-
-        return true;
-    }
-    if (e->is_event(USB_TYPE_VENDOR, 0x05)) {
-        pkt->data[0] = 0x31;
-        pkt->header.length = 1;
-        return true;
-    }
     if (e->is_event(USB_TYPE_VENDOR)) {
-        pkt->header.length = 0;
-        return true;
+        return current_config->handle_vendor_request(usb, e, pkt);
     }
 
     return false;

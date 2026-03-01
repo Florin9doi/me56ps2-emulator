@@ -19,7 +19,6 @@ constexpr auto MAX_PACKET_SIZE_BULK = 64U;
 constexpr auto STRING_ID_MANUFACTURER = 1U;
 constexpr auto STRING_ID_PRODUCT = 2U;
 constexpr auto STRING_ID_SERIAL = 3U;
-
 constexpr auto STRING_DESCRIPTORS_NUM = 4;
 
 constexpr auto CONTROL_DATA_BUFFER_SIZE = 256U;
@@ -69,4 +68,13 @@ struct modem_config {
     struct usb_device_descriptor device_descriptor;
     struct usb_config_descriptors config_descriptors;
     const void *string_descriptors[STRING_DESCRIPTORS_NUM];
+    bool (*handle_set_configuration)(usb_raw_gadget *usb, struct usb_packet_control *pkt, const struct modem_config *cfg);
+    bool (*handle_vendor_request)(usb_raw_gadget *usb, usb_raw_control_event *e, struct usb_packet_control *pkt);
 };
+
+static bool me56ps2_set_configuration(usb_raw_gadget *usb, struct usb_packet_control *pkt, const struct modem_config *cfg);
+static bool ms56kps2_set_configuration(usb_raw_gadget *usb, struct usb_packet_control *pkt, const struct modem_config *cfg);
+static bool p2gate_set_configuration(usb_raw_gadget *usb, struct usb_packet_control *pkt, const struct modem_config *cfg);
+static bool me56ps2_vendor_request(usb_raw_gadget *usb, usb_raw_control_event *e, struct usb_packet_control *pkt);
+static bool ms56kps2_vendor_request(usb_raw_gadget *usb, usb_raw_control_event *e, struct usb_packet_control *pkt);
+static bool p2gate_vendor_request(usb_raw_gadget *usb, usb_raw_control_event *e, struct usb_packet_control *pkt);
