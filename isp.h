@@ -1,3 +1,5 @@
+#pragma once
+
 #include <csignal>
 #include <cstdlib>
 #include <fstream>

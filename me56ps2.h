@@ -1,3 +1,8 @@
+#pragma once
+
+#include <cstdint>
+#include <linux/usb/ch9.h>
+
 #if defined(HW_NANOPI_NEO2) // for NanoPi NEO2
 constexpr char USB_RAW_GADGET_DRIVER_DEFAULT[] = "musb-hdrc";
 constexpr char USB_RAW_GADGET_DEVICE_DEFAULT[] = "musb-hdrc.2.auto";
@@ -62,19 +67,3 @@ struct usb_config_descriptors {
     struct usb_interface_descriptor interface;
     struct _usb_endpoint_descriptor endpoints[8];
 };
-
-struct modem_config {
-    const char *model_name;
-    struct usb_device_descriptor device_descriptor;
-    struct usb_config_descriptors config_descriptors;
-    const void *string_descriptors[STRING_DESCRIPTORS_NUM];
-    bool (*handle_set_configuration)(usb_raw_gadget *usb, struct usb_packet_control *pkt, const struct modem_config *cfg);
-    bool (*handle_vendor_request)(usb_raw_gadget *usb, usb_raw_control_event *e, struct usb_packet_control *pkt);
-};
-
-static bool me56ps2_set_configuration(usb_raw_gadget *usb, struct usb_packet_control *pkt, const struct modem_config *cfg);
-static bool ms56kps2_set_configuration(usb_raw_gadget *usb, struct usb_packet_control *pkt, const struct modem_config *cfg);
-static bool p2gate_set_configuration(usb_raw_gadget *usb, struct usb_packet_control *pkt, const struct modem_config *cfg);
-static bool me56ps2_vendor_request(usb_raw_gadget *usb, usb_raw_control_event *e, struct usb_packet_control *pkt);
-static bool ms56kps2_vendor_request(usb_raw_gadget *usb, usb_raw_control_event *e, struct usb_packet_control *pkt);
-static bool p2gate_vendor_request(usb_raw_gadget *usb, usb_raw_control_event *e, struct usb_packet_control *pkt);
