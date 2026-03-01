@@ -1,5 +1,5 @@
 TARGET = me56ps2
-OBJS = me56ps2.o modem.o modem_omron.o modem_onlinestation.o modem_smartscm.o usb_raw_gadget.o usb_raw_control_event.o tcp_sock.o pty_dev.o
+OBJS = main_app.o modem.o modem_omron.o modem_onlinestation.o modem_smartscm.o usb_raw_gadget.o usb_raw_control_event.o tcp_sock.o pty_dev.o
 CXXFLAGS = -Wall -Wextra
 LDFLAGS = -pthread
 

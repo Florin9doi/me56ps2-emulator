@@ -1,11 +1,10 @@
 #pragma once
 
 #include <thread>
-#include "me56ps2.h"
+#include "main_app.h"
 #include "usb_raw_gadget.h"
 #include "usb_raw_control_event.h"
 
-// Forward declarations for bulk-thread functions defined in me56ps2.cpp
 void *usb_bulk_in_thread(usb_raw_gadget *usb, int ep_num);
 void *usb_bulk_out_thread(usb_raw_gadget *usb, int ep_num);
 
