@@ -90,26 +90,28 @@ static const struct usb_config_descriptors cfg_descs = {
     }
 };
 
-const char *OmronModem::model_name() const { return "Omron"; }
 const struct usb_device_descriptor &OmronModem::device_descriptor() const { return dev_desc; }
-const struct usb_config_descriptors &OmronModem::config_descriptors() const { return cfg_descs; }
+const struct usb_config_descriptors &OmronModem::config_descriptors(const uint8_t id) const {
+    (void)id;
+    return cfg_descs;
+}
 const void * const *OmronModem::string_descriptors() const { return str_descs; }
 
-bool OmronModem::handle_set_configuration(struct usb_packet_control *pkt) {
+bool OmronModem::handle_set_configuration(usb_raw_control_event *e, struct usb_packet_control *pkt) {
     if (thread_bulk_in == nullptr) {
         const int ep_num = ctx.usb->ep_enable(reinterpret_cast<struct usb_endpoint_descriptor *>(
-                const_cast<struct _usb_endpoint_descriptor *>(&config_descriptors().endpoints[0])));
+                const_cast<struct _usb_endpoint_descriptor *>(&config_descriptors(0).endpoints[0])));
         thread_bulk_in = new std::thread(&OmronModem::bulk_in_thread, this, ep_num);
     }
     if (thread_bulk_out == nullptr) {
         const int ep_num = ctx.usb->ep_enable(reinterpret_cast<struct usb_endpoint_descriptor *>(
-                const_cast<struct _usb_endpoint_descriptor *>(&config_descriptors().endpoints[1])));
+                const_cast<struct _usb_endpoint_descriptor *>(&config_descriptors(0).endpoints[1])));
         thread_bulk_out = new std::thread(&OmronModem::bulk_out_thread, this, ep_num);
     }
-    return Modem::handle_set_configuration(pkt);
+    return Modem::handle_set_configuration(e, pkt);
 }
 
-bool OmronModem::handle_vendor_request(usb_raw_control_event *e, struct usb_packet_control *pkt) {
+bool OmronModem::handle_control_request(usb_raw_control_event *e, struct usb_packet_control *pkt) {
     if (e->is_event(USB_TYPE_VENDOR, 0x01)) {
         pkt->header.length = 0;
         if ((e->ctrl.wValue & 0x0101) == 0x0100) {

@@ -51,8 +51,9 @@ bool process_control_packet(usb_raw_control_event *e, struct usb_packet_control 
             return true;
         }
         if (descriptor_type == USB_DT_CONFIG) {
-            const auto total_length = __le16_to_cpu(ctx.current_modem->config_descriptors().config.wTotalLength);
-            memcpy(pkt->data, &ctx.current_modem->config_descriptors(), total_length);
+            const auto id = e->ctrl.wValue & 0x00ff;
+            const auto total_length = __le16_to_cpu(ctx.current_modem->config_descriptors(id).config.wTotalLength);
+            memcpy(pkt->data, &ctx.current_modem->config_descriptors(id), total_length);
             pkt->header.length = total_length;
             return true;
         }
@@ -68,14 +69,14 @@ bool process_control_packet(usb_raw_control_event *e, struct usb_packet_control 
         }
     }
     if (e->is_event(USB_TYPE_STANDARD, USB_REQ_SET_CONFIGURATION)) {
-        return ctx.current_modem->handle_set_configuration(pkt);
+        return ctx.current_modem->handle_set_configuration(e, pkt);
     }
     if (e->is_event(USB_TYPE_STANDARD, USB_REQ_SET_INTERFACE)) {
         pkt->header.length = 0;
         return true;
     }
-    if (e->is_event(USB_TYPE_VENDOR)) {
-        return ctx.current_modem->handle_vendor_request(e, pkt);
+    if (e->is_event(USB_TYPE_VENDOR) || e->is_event(USB_TYPE_CLASS)) {
+        return ctx.current_modem->handle_control_request(e, pkt);
     }
 
     return false;
@@ -99,6 +100,11 @@ bool event_usb_control_loop()
         case USB_RAW_EVENT_CONNECT:
             break;
         case USB_RAW_EVENT_CONTROL:
+            if ((e.ctrl.bRequestType & USB_ENDPOINT_DIR_MASK) == USB_DIR_OUT) {
+                pkt.header.length = e.ctrl.wLength;
+                ctx.usb->ep0_read(reinterpret_cast<struct usb_raw_ep_io *>(&pkt));
+            }
+
             if (!process_control_packet(&e, &pkt)) {
                 ctx.usb->ep0_stall();
                 break;
@@ -107,8 +113,6 @@ bool event_usb_control_loop()
             pkt.header.length = std::min(pkt.header.length, static_cast<unsigned int>(e.ctrl.wLength));
             if (e.ctrl.bRequestType & USB_DIR_IN) {
                 ctx.usb->ep0_write(reinterpret_cast<struct usb_raw_ep_io *>(&pkt));
-            } else {
-                ctx.usb->ep0_read(reinterpret_cast<struct usb_raw_ep_io *>(&pkt));
             }
             break;
         default:
@@ -129,6 +133,7 @@ void show_usage(char *prog_name, bool verbose)
     printf("        Omron         Omron Viaggio (ME56PS2)\n");
     printf("        OnlineStation Suntac OnlineStation (MS56KPS2)\n");
     printf("        SmartSCM      Conexant SmartSCM (P2GATE)\n");
+    printf("        Lucent        Multi-Tech MultiMobile (MT5634MU)\n");
     printf("  -s    run as server\n");
     printf("  -v    verbose. increment log level\n");
     printf("  -h    show this help message.\n");

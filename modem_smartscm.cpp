@@ -138,43 +138,45 @@ static const struct usb_config_descriptors cfg_descs = {
     }
 };
 
-const char *SmartSCMModem::model_name() const { return "SmartSCM"; }
 const struct usb_device_descriptor &SmartSCMModem::device_descriptor() const { return dev_desc; }
-const struct usb_config_descriptors &SmartSCMModem::config_descriptors() const { return cfg_descs; }
+const struct usb_config_descriptors &SmartSCMModem::config_descriptors(const uint8_t id) const {
+    (void)id;
+    return cfg_descs;
+}
 const void * const *SmartSCMModem::string_descriptors() const { return str_descs; }
 
-bool SmartSCMModem::handle_set_configuration(struct usb_packet_control *pkt) {
+bool SmartSCMModem::handle_set_configuration(usb_raw_control_event *e, struct usb_packet_control *pkt) {
     if (thread_control_out == nullptr) {
         const int ep_num = ctx.usb->ep_enable(reinterpret_cast<struct usb_endpoint_descriptor *>(
-                const_cast<struct _usb_endpoint_descriptor *>(&config_descriptors().endpoints[0])));
+                const_cast<struct _usb_endpoint_descriptor *>(&config_descriptors(0).endpoints[0])));
         thread_control_out = new std::thread(&SmartSCMModem::control_out_thread, this, ep_num);
     }
     if (thread_control_in == nullptr) {
         const int ep_num = ctx.usb->ep_enable(reinterpret_cast<struct usb_endpoint_descriptor *>(
-                const_cast<struct _usb_endpoint_descriptor *>(&config_descriptors().endpoints[1])));
+                const_cast<struct _usb_endpoint_descriptor *>(&config_descriptors(0).endpoints[1])));
         thread_control_in = new std::thread(&SmartSCMModem::control_in_thread, this, ep_num);
     }
     if (thread_data_out == nullptr) {
         const int ep_num = ctx.usb->ep_enable(reinterpret_cast<struct usb_endpoint_descriptor *>(
-                const_cast<struct _usb_endpoint_descriptor *>(&config_descriptors().endpoints[4])));
+                const_cast<struct _usb_endpoint_descriptor *>(&config_descriptors(0).endpoints[4])));
         thread_data_out = new std::thread(&SmartSCMModem::data_out_thread, this, ep_num);
     }
     if (thread_data_in == nullptr) {
         const int ep_num = ctx.usb->ep_enable(reinterpret_cast<struct usb_endpoint_descriptor *>(
-                const_cast<struct _usb_endpoint_descriptor *>(&config_descriptors().endpoints[5])));
+                const_cast<struct _usb_endpoint_descriptor *>(&config_descriptors(0).endpoints[5])));
         thread_data_in = new std::thread(&SmartSCMModem::data_in_thread, this, ep_num);
     }
     if (thread_gpio_out == nullptr) {
         const int ep_num = ctx.usb->ep_enable(reinterpret_cast<struct usb_endpoint_descriptor *>(
-                const_cast<struct _usb_endpoint_descriptor *>(&config_descriptors().endpoints[6])));
+                const_cast<struct _usb_endpoint_descriptor *>(&config_descriptors(0).endpoints[6])));
         thread_gpio_out = new std::thread(&SmartSCMModem::gpio_out_thread, this, ep_num);
     }
     if (thread_gpio_in == nullptr) {
         const int ep_num = ctx.usb->ep_enable(reinterpret_cast<struct usb_endpoint_descriptor *>(
-                const_cast<struct _usb_endpoint_descriptor *>(&config_descriptors().endpoints[7])));
+                const_cast<struct _usb_endpoint_descriptor *>(&config_descriptors(0).endpoints[7])));
         thread_gpio_in = new std::thread(&SmartSCMModem::gpio_in_thread, this, ep_num);
     }
-    return Modem::handle_set_configuration(pkt);
+    return Modem::handle_set_configuration(e, pkt);
 }
 
 bool SmartSCMModem::process_at_ext(std::string &line) {

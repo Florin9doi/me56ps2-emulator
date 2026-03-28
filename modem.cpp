@@ -4,6 +4,7 @@
 #include <thread>
 
 #include "modem.h"
+#include "modem_lucent.h"
 #include "modem_omron.h"
 #include "modem_onlinestation.h"
 #include "modem_smartscm.h"
@@ -51,6 +52,7 @@ struct modem_entry {
     const char *name;
     Modem *(*factory)();
 } static const registry[] = {
+    { "Lucent",        []() -> Modem * { return new LucentModem();        } },
     { "Omron",         []() -> Modem * { return new OmronModem();         } },
     { "OnlineStation", []() -> Modem * { return new OnlineStationModem(); } },
     { "SmartSCM",      []() -> Modem * { return new SmartSCMModem();      } },
@@ -73,15 +75,16 @@ Modem *Modem::getInstance(const char *name) {
     return nullptr;
 }
 
-bool Modem::handle_set_configuration(struct usb_packet_control *pkt) {
-    ctx.usb->vbus_draw(config_descriptors().config.bMaxPower);
+bool Modem::handle_set_configuration(usb_raw_control_event *e, struct usb_packet_control *pkt) {
+    const auto id = e->ctrl.wValue & 0x00ff;
+    ctx.usb->vbus_draw(config_descriptors(id).config.bMaxPower);
     ctx.usb->configure();
     printf("USB configured.\n");
     pkt->header.length = 0;
     return true;
 }
 
-bool Modem::handle_vendor_request(usb_raw_control_event *e, struct usb_packet_control *pkt) {
+bool Modem::handle_control_request(usb_raw_control_event *e, struct usb_packet_control *pkt) {
     (void)e;
     (void)pkt;
     return true;

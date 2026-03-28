@@ -65,6 +65,8 @@ const char *usb_raw_control_event::get_request_type_string(void)
     switch (get_request_type()) {
         case USB_TYPE_STANDARD:
             return "USB_TYPE_STANDARD";
+        case USB_TYPE_CLASS:
+            return "USB_TYPE_CLASS";
         case USB_TYPE_VENDOR:
             return "USB_TYPE_VENDOR";
         default:

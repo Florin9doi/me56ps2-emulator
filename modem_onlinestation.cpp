@@ -98,31 +98,33 @@ static const struct usb_config_descriptors cfg_descs = {
     }
 };
 
-const char *OnlineStationModem::model_name() const { return "OnlineStation"; }
 const struct usb_device_descriptor &OnlineStationModem::device_descriptor() const { return dev_desc; }
-const struct usb_config_descriptors &OnlineStationModem::config_descriptors() const { return cfg_descs; }
+const struct usb_config_descriptors &OnlineStationModem::config_descriptors(const uint8_t id) const {
+    (void)id;
+    return cfg_descs;
+}
 const void * const *OnlineStationModem::string_descriptors() const { return str_descs; }
 
-bool OnlineStationModem::handle_set_configuration(struct usb_packet_control *pkt) {
+bool OnlineStationModem::handle_set_configuration(usb_raw_control_event *e, struct usb_packet_control *pkt) {
     if (thread_bulk_in == nullptr) {
         const int ep_num = ctx.usb->ep_enable(reinterpret_cast<struct usb_endpoint_descriptor *>(
-                const_cast<struct _usb_endpoint_descriptor *>(&config_descriptors().endpoints[0])));
+                const_cast<struct _usb_endpoint_descriptor *>(&config_descriptors(0).endpoints[0])));
         thread_bulk_in = new std::thread(&OnlineStationModem::bulk_in_thread, this, ep_num);
     }
     if (thread_bulk_out == nullptr) {
         const int ep_num = ctx.usb->ep_enable(reinterpret_cast<struct usb_endpoint_descriptor *>(
-                const_cast<struct _usb_endpoint_descriptor *>(&config_descriptors().endpoints[1])));
+                const_cast<struct _usb_endpoint_descriptor *>(&config_descriptors(0).endpoints[1])));
         thread_bulk_out = new std::thread(&OnlineStationModem::bulk_out_thread, this, ep_num);
     }
     if (thread_intr_in == nullptr) {
         const int ep_num = ctx.usb->ep_enable(reinterpret_cast<struct usb_endpoint_descriptor *>(
-                const_cast<struct _usb_endpoint_descriptor *>(&config_descriptors().endpoints[2])));
+                const_cast<struct _usb_endpoint_descriptor *>(&config_descriptors(0).endpoints[2])));
         thread_intr_in = new std::thread(&OnlineStationModem::intr_in_thread, this, ep_num);
     }
-    return Modem::handle_set_configuration(pkt);
+    return Modem::handle_set_configuration(e, pkt);
 }
 
-bool OnlineStationModem::handle_vendor_request(usb_raw_control_event *e, struct usb_packet_control *pkt) {
+bool OnlineStationModem::handle_control_request(usb_raw_control_event *e, struct usb_packet_control *pkt) {
     if (e->is_event(USB_TYPE_VENDOR, 0x10)) { // set baud rate
         constexpr uint32_t rates[] = {110, 300, 600, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600};
         printf("os : vendor : set baud rate = 0x%02x (%d)\n", e->ctrl.wValue, rates[e->ctrl.wValue]);
