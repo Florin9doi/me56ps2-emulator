@@ -46,15 +46,8 @@ sudo systemctl restart dnsmasq
 
 # compile me56ps2-emulator
 git clone https://github.com/msawahara/me56ps2-emulator.git ~/me56ps2-emulator
-make -C ~/me56ps2-emulator rpi-zero2
+make -C ~/me56ps2-emulator
 sudo ~/me56ps2-emulator/me56ps2 -s 0.0.0.0 10023
-```
-
-If you use a different board than the Raspberry Pi Zero 2 W, use below.
-```shell
-make rpi4  # for Raspberry Pi 4
-make rpi-zero  # for Raspberry Pi Zero W
-make nanopi-neo2  # for NanoPi NEO2, Lichee Zero
 ```
 
 ### Run

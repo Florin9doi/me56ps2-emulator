@@ -14,7 +14,7 @@ class usb_raw_gadget
         usb_raw_gadget(const char *file);
         ~usb_raw_gadget();
         void set_debug_level(const int level);
-        void init(enum usb_device_speed speed, const char *driver_name, const char *device_name);
+        void init(enum usb_device_speed speed);
         void run(void);
         void close(void);
         void event_fetch(struct usb_raw_event *event);

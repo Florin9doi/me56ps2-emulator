@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <dirent.h>
 #include <fcntl.h>
 #include <stdexcept>
 #include <string>
@@ -47,11 +48,65 @@ void usb_raw_gadget::set_debug_level(const int level)
     debug_level = level;
 }
 
-void usb_raw_gadget::init(enum usb_device_speed speed, const char *driver_name, const char *device_name)
+bool get_udc_driver(char *out, size_t out_size)
+{
+    if (!out || out_size == 0)
+        return false;
+
+    DIR *d = opendir("/sys/class/udc");
+    if (!d)
+        return false;
+
+    struct dirent *de;
+    while ((de = readdir(d)) != nullptr) {
+        if (de->d_name[0] == '.')  // skip . and ..
+            continue;
+
+        std::strncpy(out, de->d_name, out_size);
+        out[out_size - 1] = '\0';
+        closedir(d);
+        return true;
+    }
+
+    closedir(d);
+    return false;
+}
+
+bool get_udc_device(const char *udc, char *out, size_t out_size)
+{
+    if (!udc || !out || out_size == 0)
+        return false;
+
+    char path[256];
+    std::snprintf(path, sizeof(path), "/sys/class/udc/%s/uevent", udc);
+
+    FILE *f = std::fopen(path, "r");
+    if (!f)
+        return false;
+
+    char line[256];
+    const char prefix[] = "USB_UDC_NAME=";
+    const size_t prefix_len = sizeof(prefix) - 1;
+
+    while (std::fgets(line, sizeof(line), f)) {
+        if (std::strncmp(line, prefix, prefix_len) == 0) {
+            std::strncpy(out, line + prefix_len, out_size);
+            out[out_size - 1] = '\0';
+            out[strcspn(out, "\n")] = '\0';
+            std::fclose(f);
+            return true;
+        }
+    }
+
+    std::fclose(f);
+    return false;
+}
+
+void usb_raw_gadget::init(enum usb_device_speed speed)
 {
     struct usb_raw_init arg;
-    strcpy((char *) arg.driver_name, driver_name);
-    strcpy((char *) arg.device_name, device_name);
+    get_udc_driver((char*) arg.driver_name, sizeof(arg.driver_name));
+    get_udc_device((char*) arg.driver_name, (char*) arg.device_name, sizeof(arg.device_name));
     arg.speed = speed;
 
     int ret = ioctl(fd, USB_RAW_IOCTL_INIT, &arg);

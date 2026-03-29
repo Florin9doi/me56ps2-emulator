@@ -26,7 +26,6 @@ void usb_raw_control_event::print_debug_log(void)
         case USB_RAW_EVENT_CONTROL:
             printf("event type: USB_RAW_EVENT_CONTROL, length: %u\n", event.length);
             break;
-#if defined(HW_RPI_ZERO) || defined(HW_RPI_ZERO2)
         case USB_RAW_EVENT_SUSPEND:
             printf("event type: USB_RAW_EVENT_SUSPEND, length: %u\n", event.length);
             break;
@@ -39,7 +38,6 @@ void usb_raw_control_event::print_debug_log(void)
         case USB_RAW_EVENT_DISCONNECT:
             printf("event type: USB_RAW_EVENT_DISCONNECT, length: %u\n", event.length);
             break;
-#endif
         default:
             printf("event type: unknown(%u), length: %u\n", event.type, event.length);
             break;

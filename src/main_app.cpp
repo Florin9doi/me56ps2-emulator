@@ -141,8 +141,6 @@ void show_usage(char *prog_name, bool verbose)
     printf("Parameters:\n");
     printf("  ip_addr       server IPv4 address (required for socket mode)\n");
     printf("  port          port number (required for socket mode)\n");
-    printf("  usb_driver    driver name (default: %s)\n", USB_RAW_GADGET_DRIVER_DEFAULT);
-    printf("  usb_device    device name (default: %s)\n", USB_RAW_GADGET_DEVICE_DEFAULT);
     printf("\n");
     printf("PTY mode: dial ATD100 from the modem to open a PTY slave device.\n");
     return;
@@ -151,8 +149,6 @@ void show_usage(char *prog_name, bool verbose)
 int main(int argc, char *argv[])
 {
     ctx.current_modem = nullptr;
-    const char *driver = USB_RAW_GADGET_DRIVER_DEFAULT;
-    const char *device = USB_RAW_GADGET_DEVICE_DEFAULT;
     const char *ip_addr = nullptr;
     int port = -1;
     bool is_server = false;
@@ -197,12 +193,10 @@ int main(int argc, char *argv[])
             port = atoi(argv[optind++]);
         }
     }
-    if (optind < argc) {driver = argv[optind++];}
-    if (optind < argc) {device = argv[optind++];}
 
     ctx.usb = new usb_raw_gadget("/dev/raw-gadget");
     ctx.usb->set_debug_level(ctx.debug_level);
-    ctx.usb->init(USB_SPEED_FULL, driver, device);
+    ctx.usb->init(USB_SPEED_FULL);
     ctx.usb->run();
 
     ctx.pty = new pty_dev();
