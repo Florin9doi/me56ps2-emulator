@@ -274,6 +274,8 @@ void *SmartSCMModem::data_in_thread(int ep_num) {
     struct usb_packet_control pkt;
     auto timeout_at = std::chrono::steady_clock::now();
 
+    bool last_dcd = true;
+
     while (true) {
         const auto now = std::chrono::steady_clock::now();
         while (timeout_at <= now) {
@@ -284,16 +286,22 @@ void *SmartSCMModem::data_in_thread(int ep_num) {
         char data[14] = {0};
         int payload_length = ctx.usb_tx_buffer.dequeue(data, sizeof(data));
 
-        pkt.data[0] = 0x30;
-        if (ctx.connected.load()) {pkt.data[0] |= 0x80;}
+        bool dcd = ctx.connected.load();
+        if (!payload_length && last_dcd == dcd)
+            continue;
+        last_dcd = dcd;
+
+        pkt.data[0] = 0x30; // MSR
+        if (dcd)
+            pkt.data[0] |= 0x80; // DCD
 
         for (int i = 0; i < payload_length; ++i) {
-             pkt.data[1 + 2*i]     = 0x61;
+             pkt.data[1 + 2*i]     = 0x61; // LSR
              pkt.data[1 + 2*i + 1] = data[i];
         }
         bool is_empty = ctx.usb_tx_buffer.is_empty();
         if (is_empty)
-            pkt.data[1 + 2*payload_length] = 0x60;
+            pkt.data[1 + 2*payload_length] = 0x60; // LSR
 
         pkt.header.ep = ep_num;
         pkt.header.flags = 0;
