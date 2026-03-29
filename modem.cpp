@@ -95,7 +95,7 @@ void Modem::process_at(std::string &line) {
     printf("AT command: %s\n", line.c_str());
 
     if (echo) {
-        const auto s = line + "\r\n";
+        const auto s = line + "\r\r\n";
         ctx.usb_tx_buffer.enqueue(s.c_str(), s.length());
     }
 
@@ -104,7 +104,7 @@ void Modem::process_at(std::string &line) {
     }
 
     std::string reply = "OK\r\n";
-    if (line == "AT&F") {echo = true;}
+    if (line == "ATZ" || line == "AT&F") {echo = true;}
     if (line == "ATE0") {echo = false;}
     if (line == "ATA") {
         reply = "CONNECT 57600 V42\r\n";
