@@ -141,6 +141,8 @@ void *OmronModem::bulk_in_thread(int ep_num) {
     struct usb_packet_control pkt;
     auto timeout_at = std::chrono::steady_clock::now();
 
+    bool last_dcd = true;
+
     while (true) {
         const auto now = std::chrono::steady_clock::now();
         while (timeout_at <= now) {
@@ -148,10 +150,17 @@ void *OmronModem::bulk_in_thread(int ep_num) {
         }
         ctx.usb_tx_buffer.wait(timeout_at);
 
-        pkt.data[0] = 0x31;
-        if (ctx.connected.load()) {pkt.data[0] |= 0x80;}
-        pkt.data[1] = 0x60;
         int payload_length = ctx.usb_tx_buffer.dequeue(&pkt.data[2], MAX_PACKET_SIZE_BULK - 2);
+
+        bool dcd = ctx.connected.load();
+        if (!payload_length && last_dcd == dcd)
+            continue;
+        last_dcd = dcd;
+
+        pkt.data[0] = 0x31;
+        if (dcd)
+            pkt.data[0] |= 0x80;
+        pkt.data[1] = 0x60;
 
         pkt.header.ep = ep_num;
         pkt.header.flags = 0;
