@@ -90,6 +90,39 @@ bool Modem::handle_control_request(usb_raw_control_event *e, struct usb_packet_c
     return true;
 }
 
+bool isPPPNumber(const std::string& s) {
+    static const std::vector<std::string> pppNumbers = {
+        "100",
+        "168"
+    };
+
+    std::string num = s;
+
+    // Strip Pulse/Tone prefix
+    if (!num.empty() && (num[0] == 'T' || num[0] == 'P')) {
+        num = num.substr(1);
+    }
+
+    // Strip trailing dash
+    if (!num.empty() && num.back() == '-') {
+        num.pop_back();
+    }
+
+    // Ignore extensions
+    size_t commaPos = num.find(',');
+    if (commaPos != std::string::npos) {
+        num = num.substr(0, commaPos);
+    }
+
+    for (const auto& base : pppNumbers) {
+        if (num == base) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void Modem::process_at(std::string &line) {
     bool enter_online = false;
     printf("AT command: %s\n", line.c_str());
@@ -112,8 +145,7 @@ void Modem::process_at(std::string &line) {
     }
     if (strncmp(line.c_str(), "ATD", 3) == 0) {
         // PPP
-        if (line.substr(3) == "100" || line.substr(3) == "T100" || line.substr(3) == "P100"
-         || line.substr(3) == "T186,005363121201" || line.substr(3) == "P186,005363121201") {
+        if (isPPPNumber(line.substr(3))) {
             if (ctx.pty->connect()) {
                 reply = "CONNECT 57600 V42\r\n";
                 enter_online = true;
