@@ -151,7 +151,7 @@ void *OmronModem::bulk_in_thread(int ep_num) {
         pkt.data[0] = 0x31;
         if (ctx.connected.load()) {pkt.data[0] |= 0x80;}
         pkt.data[1] = 0x60;
-        int payload_length = ctx.usb_tx_buffer.dequeue(&pkt.data[2], sizeof(pkt.data) - 2);
+        int payload_length = ctx.usb_tx_buffer.dequeue(&pkt.data[2], MAX_PACKET_SIZE_BULK - 2);
 
         pkt.header.ep = ep_num;
         pkt.header.flags = 0;
