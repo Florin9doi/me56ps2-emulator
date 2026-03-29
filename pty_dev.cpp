@@ -13,7 +13,7 @@
 void* pty_dev::recv_thread(void)
 {
     fd_set readfds;
-    timeval recv_timeout = {.tv_sec = 0, .tv_usec = 100 * 1000}; // 100ms
+    timeval recv_timeout;
     auto fd = master_fd.load();
     char buf[64];
 
@@ -21,6 +21,7 @@ void* pty_dev::recv_thread(void)
     while (true) {
         FD_ZERO(&readfds);
         FD_SET(fd, &readfds);
+        recv_timeout = {.tv_sec = 0, .tv_usec = 100 * 1000}; // 100ms
         auto ret = select(fd + 1, &readfds, nullptr, nullptr, &recv_timeout);
         if (ret < 0) {
             printf("pty_dev: select(): %s\n", std::strerror(errno));
