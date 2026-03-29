@@ -1,7 +1,9 @@
 TARGET = me56ps2
-OBJS = main_app.o modem.o modem_omron.o modem_onlinestation.o \
-	modem_smartscm.o modem_lucent.o \
-	usb_raw_gadget.o usb_raw_control_event.o tcp_sock.o pty_dev.o
+
+SRC_DIR = src
+SRCS = $(wildcard $(SRC_DIR)/*.cpp)
+OBJS = $(SRCS:$(SRC_DIR)/%.cpp=%.o)
+
 CXXFLAGS = -Wall -Wextra
 LDFLAGS = -pthread
 
@@ -10,8 +12,8 @@ LDFLAGS = -pthread
 $(TARGET): $(OBJS)
 	$(CXX) -o $(TARGET) $(LDFLAGS) $^
 
-.cpp.o:
-	$(CXX) $(CXXFLAGS) -c $<
+%.o: $(SRC_DIR)/%.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 .PHONY: rpi4
 rpi4: $(TARGET)
