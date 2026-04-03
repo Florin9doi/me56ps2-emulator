@@ -263,6 +263,30 @@ bool LucentModem::handle_control_request(usb_raw_control_event *e, struct usb_pa
     return false;
 }
 
+bool LucentModem::process_at_ext(std::string &line) {
+    std::string reply;
+    if (line == "ATI" || line == "ATI0" || line == "ATI3") {
+        reply = "LT V.90 1.0 MT5634MU USB Data/Fax Modem Version 8.18j";
+    } else if (line == "ATI1") {
+        reply = "D092";
+    } else if (line == "ATI4") {
+        reply = "17";
+    } else if (line == "ATI5") {
+        reply = "U052099f,0,34";
+    } else if (line == "ATI7") {
+        reply = "Global2 Build";
+    } else if (line == "ATI9") {
+        reply = "52";
+    }
+    if (!reply.empty()) {
+        reply += "\r\n\r\nOK\r\n";
+        ctx.usb_tx_buffer.enqueue(reply.c_str(), reply.length());
+        ctx.usb_tx_buffer.notify_one();
+        return true;
+    }
+    return false;
+}
+
 void *LucentModem::intr_in_thread(int ep_num) {
     struct usb_packet_control pkt;
     auto timeout_at = std::chrono::steady_clock::now();

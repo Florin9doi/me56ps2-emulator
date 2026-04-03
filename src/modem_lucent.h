@@ -10,6 +10,7 @@ public:
 
     bool handle_set_configuration(usb_raw_control_event *e, struct usb_packet_control *pkt) override;
     bool handle_control_request(usb_raw_control_event *e, struct usb_packet_control *pkt) override;
+    bool process_at_ext(std::string &line) override;
 
 protected:
     void *intr_in_thread(int ep_num);
