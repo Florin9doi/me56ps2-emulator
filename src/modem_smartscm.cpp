@@ -182,23 +182,23 @@ bool SmartSCMModem::handle_set_configuration(usb_raw_control_event *e, struct us
 bool SmartSCMModem::process_at_ext(std::string &line) {
     std::string reply;
     if (line == "ATI" || line == "ATI0") {
-        reply = "56000";
+        reply = "\r\n56000\r\n";
     } else if (line == "ATI1") {
-        reply = "042";
+        reply = "\r\n042\r\n";
     } else if (line == "ati3") {
-        reply = "P2109-V90";
+        reply = "\r\nP2109-V90\r\n";
     } else if (line == "ATI4") {
-        reply = "a007080284C6002F\r\n\r\n"
-                "bC60000000\r\n\r\n"
-                "r1005111151012004\r\n\r\n"
-                "r3000111170000000";
+        reply = "\r\na007080284C6002F\r\n"
+                "\r\nbC60000000\r\n"
+                "\r\nr1005111151012004\r\n"
+                "\r\nr3000111170000000\r\n";
     } else if (line == "ATI5") {
-        reply = "B5";
+        reply = "\r\nB5\r\n";
     } else if (line == "ATI6") {
-        reply = "RCV56DPF-PLL L8773A Rev 14.00/34.00";
+        reply = "\r\nRCV56DPF-PLL L8773A Rev 14.00/34.00";
     }
     if (!reply.empty()) {
-        reply += "\r\n\r\nOK\r\n";
+        reply += "\r\nOK\r\n";
         ctx.usb_tx_buffer.enqueue(reply.c_str(), reply.length());
         ctx.usb_tx_buffer.notify_one();
         return true;

@@ -265,21 +265,31 @@ bool LucentModem::handle_control_request(usb_raw_control_event *e, struct usb_pa
 
 bool LucentModem::process_at_ext(std::string &line) {
     std::string reply;
-    if (line == "ATI" || line == "ATI0" || line == "ATI3") {
-        reply = "LT V.90 1.0 MT5634MU USB Data/Fax Modem Version 8.18j";
+    if (line == "AT#CLS=?" || line == "AT+GCI?" || line == "AT+GCI=?") {
+        reply += "\r\nERROR\r\n";
+        usb_tx_buffer.enqueue(reply.c_str(), reply.length());
+        usb_tx_buffer.notify_one();
+        return true;
+    }
+    if (line == "AT+GMM") {
+        reply = "\r\nH.324 video-ready rev. 1.0\r\n";
+    } else if (line == "AT+FCLASS=?") {
+        reply = "\r\n0,1,2";
+    } else if (line == "ATI" || line == "ATI0" || line == "ATI3") {
+        reply = "\r\nLT V.90 1.0 MT5634MU USB Data/Fax Modem Version 8.18j\r\n";
     } else if (line == "ATI1") {
-        reply = "D092";
+        reply = "\r\nD092\r\n";
     } else if (line == "ATI4") {
-        reply = "17";
+        reply = "\r\n17\r\n";
     } else if (line == "ATI5") {
-        reply = "U052099f,0,34";
+        reply = "\r\nU052099f,0,34\r\n";
     } else if (line == "ATI7") {
-        reply = "Global2 Build";
+        reply = "\r\nGlobal2 Build\r\n";
     } else if (line == "ATI9") {
-        reply = "52";
+        reply = "\r\n52\r\n";
     }
     if (!reply.empty()) {
-        reply += "\r\n\r\nOK\r\n";
+        reply += "\r\nOK\r\n";
         ctx.usb_tx_buffer.enqueue(reply.c_str(), reply.length());
         ctx.usb_tx_buffer.notify_one();
         return true;
@@ -342,6 +352,9 @@ void *LucentModem::bulk_out_thread(int ep_num) {
 
         // Off-line mode loop
         while (!ctx.connected.load()) {
+            while (!buffer.empty() && (buffer[0] == '\0')) {
+                buffer.erase(0, 1);
+            }
             auto newline_pos = buffer.find('\x0d');
             if (newline_pos == std::string::npos) { break; }
             std::string line = buffer.substr(0, newline_pos);
