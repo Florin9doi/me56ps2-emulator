@@ -174,6 +174,38 @@ bool OnlineStationModem::handle_control_request(usb_raw_control_event *e, struct
     return false;
 }
 
+bool OnlineStationModem::process_at_ext(std::string &line) {
+    std::string reply;
+    if (line == "ATI" || line == "ATI0") {
+        reply = "\r\nPCTel/SUN T2M V.90\r\n";
+    } else if (line == "ATI1") {
+        reply = "\r\nCHECKSUM F352\r\n";
+    } else if (line == "ATI3") {
+        reply = "\r\nREV 1.100.06-003-00D   February 16, 2001\r\n";
+    } else if (line == "ATI4") {
+        reply = "\r\nCE DRIVER REV   4.2.12   04/01/2000\r\n";
+    } else if (line == "ATI5") {
+        reply = "\r\nCOUNTRY CODE   8181\r\n";
+    } else if (line == "ATI6") {
+        reply = "\r\nRX Level  -47.9 dB"
+                "\r\nTX Level    -14 dB"
+                "\r\nSNR       -00.3 dB\r\n";
+    } else if (line == "ATI7") {
+        reply = "\r\nVF1 = PCT303D REV C    VF2 = PCT303W REV C    INTERNATIONAL\r\n";
+    } else if (line == "ATI8") {
+        reply = "\r\nV.90  ti 5402  @ 096 Mhz\r\n";
+    } else if (line == "ATI9") {
+        reply = "\r\nSolsis 1\r\n";
+    }
+    if (!reply.empty()) {
+        reply += "\r\nOK\r\n";
+        ctx.usb_tx_buffer.enqueue(reply.c_str(), reply.length());
+        ctx.usb_tx_buffer.notify_one();
+        return true;
+    }
+    return false;
+}
+
 void *OnlineStationModem::intr_in_thread(int ep_num) {
     struct usb_packet_control pkt;
     auto timeout_at = std::chrono::steady_clock::now();
