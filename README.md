@@ -100,6 +100,7 @@ In that case, `ATD100` uses PTY while any other `ATD` address uses the TCP socke
   - Linux: `sudo modprobe ftdi_sio ; echo 0590 001a | sudo tee /sys/bus/usb-serial/drivers/ftdi_sio/new_id`
 - Suntac OnlineStation (MS56KPS2)
   - Windows: https://www.sun-denshi.co.jp/sc/suntac/download/modem/ms56kps2/firmup.html
+  - Linux: https://github.com/Florin9doi/linux-smartscm-usb :wink:
   - Linux 2.4: https://x68trap.no.coocan.jp/linux/suntacucp.html
   - BSD: https://github.com/openbsd/src/blob/ee05ec4a571e94e17ba0246deda48b72b7b89aef/sys/dev/usb/uvscom.c
 - Conexant SmartSCM-USB (P2GATE DFML-560/P2 / ASC-1605M56 / PV-PS200 / IGM-UB56PS2C)
