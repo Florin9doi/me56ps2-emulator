@@ -8,15 +8,15 @@ static const struct _usb_string_descriptor<1> str_lang = {
     .bDescriptorType = USB_DT_STRING,
     .wData = {__constant_cpu_to_le16(0x0409)},
 };
-static const struct _usb_string_descriptor<6> str_manufacturer = {
+static const struct _usb_string_descriptor<15> str_manufacturer = {
     .bLength = sizeof(str_manufacturer),
     .bDescriptorType = USB_DT_STRING,
-    .wData = {u'S', u'U', u'N', u'T', u'A', u'C'},
+    .wData = {u'S', u'U', u'N', u' ', u'C', u'O', u'R', u'P', u'O', u'R', u'A', u'T', u'I', u'O', u'N'},
 };
-static const struct _usb_string_descriptor<8> str_product = {
+static const struct _usb_string_descriptor<13> str_product = {
     .bLength = sizeof(str_product),
     .bDescriptorType = USB_DT_STRING,
-    .wData = {u'M', u'S', u'5', u'6', u'K', u'P', u'S', u'2'},
+    .wData = {u'M', u'o', u'd', u'e', u'm', u' ', u'A', u'd', u'a', u'p', u't', u'e', u'r'},
 };
 static const struct _usb_string_descriptor<3> str_serial = {
     .bLength = sizeof(str_serial),
@@ -41,10 +41,10 @@ static const struct usb_device_descriptor dev_desc = {
     .bMaxPacketSize0    = 0x40,
     .idVendor           = __constant_cpu_to_le16(0x05dbU),
     .idProduct          = __constant_cpu_to_le16(0x0006U),
-    .bcdDevice          = __constant_cpu_to_le16(0x0100U),
+    .bcdDevice          = __constant_cpu_to_le16(0x0120U),
     .iManufacturer      = STRING_ID_MANUFACTURER,
     .iProduct           = STRING_ID_PRODUCT,
-    .iSerialNumber      = STRING_ID_SERIAL,
+    .iSerialNumber      = 0,
     .bNumConfigurations = 1,
 };
 
@@ -56,8 +56,8 @@ static const struct usb_config_descriptors cfg_descs = {
         .bNumInterfaces      = 1,
         .bConfigurationValue = 1,
         .iConfiguration      = 0,
-        .bmAttributes        = USB_CONFIG_ATT_ONE | USB_CONFIG_ATT_SELFPOWER | USB_CONFIG_ATT_WAKEUP,
-        .bMaxPower           = 0x32,
+        .bmAttributes        = USB_CONFIG_ATT_ONE,
+        .bMaxPower           = 0x64,
     },
     .interface = {
         .bLength             = USB_DT_INTERFACE_SIZE,
@@ -66,8 +66,8 @@ static const struct usb_config_descriptors cfg_descs = {
         .bAlternateSetting   = 0,
         .bNumEndpoints       = 3,
         .bInterfaceClass     = 0xff,
-        .bInterfaceSubClass  = 0xff,
-        .bInterfaceProtocol  = 0xff,
+        .bInterfaceSubClass  = 0x00,
+        .bInterfaceProtocol  = 0x00,
         .iInterface          = 0,
     },
     .endpoints = {
@@ -93,7 +93,7 @@ static const struct usb_config_descriptors cfg_descs = {
         .bEndpointAddress    = USB_DIR_IN | 3,
         .bmAttributes        = USB_ENDPOINT_XFER_INT,
         .wMaxPacketSize      = MAX_PACKET_SIZE_BULK,
-        .bInterval           = 8,
+        .bInterval           = 1,
     }
     }
 };
