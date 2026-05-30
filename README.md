@@ -1,5 +1,5 @@
-# ME56PS2 emulator
-This software emulates ME56PS2 (PlayStation 2 compatible modem; manufactured by Omron) and performs communication via the Internet.
+# Modem emulator
+This software emulates several PlayStation 2 modems and performs communication via the Internet.
 
 By using this software, game software that supports modem communication can be used via the Internet.
 
@@ -45,7 +45,7 @@ echo "address=/ca1204.mmcp6/192.168.100.14" | sudo tee -a /etc/dnsmasq.conf
 sudo systemctl restart dnsmasq
 
 # compile me56ps2-emulator
-git clone https://github.com/msawahara/me56ps2-emulator.git ~/me56ps2-emulator
+git clone https://github.com/Florin9doi/me56ps2-emulator.git ~/me56ps2-emulator
 make -C ~/me56ps2-emulator
 sudo ~/me56ps2-emulator/me56ps2 -s 0.0.0.0 10023
 ```
